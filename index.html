@@ -1,0 +1,85 @@
+<html>
+<head>
+	<title></title>
+	<script type="text/javascript" src="js/d3.js"></script>
+	<script type="text/javascript" src="js/underscore.js"></script>
+	<script type="text/javascript" src="js/backbone.js"></script>
+</head>
+<body>
+<div id="add-input"><label>Add a thing</label><input type="text" name="addition" id="addition"><button id="add"> + </button></div>
+<div id="edit">
+	<label>remove a thing</label>
+	<ul></ul></div>
+<div id="axes-input">
+	X<input type="text" name="horizontal-min" id="horizontal-min" value="Despicable"> <-> <input type="text" name="horizontal-max" id="horizontal-max" value="Brilliant">
+	<br>
+	Y<input type="text" name="vertical-min" id="vertical-min" value="Lowbrow"> <-> <input type="text" name="vertical-max" id="vertical-max" value="Highbrow">
+</div>
+<div id="grid"><label>arrange the things</label></div>
+<div id="share">save the thing</div>
+</body>
+
+<script type="text/javascript">
+	//backbone stuff
+	var Item = Backbone.Model.extend();
+	var items = new Backbone.Collection([], {
+		model: Item
+	});
+
+	var Axis = Backbone.Model.extend();
+</script>
+
+
+<script type="text/javascript">
+
+	items.on('all', function(){
+		console.log('change', items.length)
+		d3.select('#edit').call(editorList);
+	});
+
+	d3.select('#add').on('click', function(){
+		addItem( d3.select('#addition').node().value );
+	});
+
+	function setUpGrid(){
+		d3.select('#grid')
+			.append('svg')
+			.attr({width:600,height:600});
+	}
+
+	function editorList(g){
+		var join = g.select('ul').selectAll('li')
+			.data(items.models, function(d){ return d.get('name'); });
+		
+		join.enter()
+			.append('li').text(function(d){
+				return d.get('name')
+			}).append('button').on('click',function(d){
+				items.remove(d);
+			}).text(' - ');
+		join.exit().remove();
+	}
+
+	function error(str){
+		console.log(str);
+	}
+
+	function addItem(str, x, y){
+		console.log('adding... ' + str);
+		var r = items.findWhere({ name: str});
+		if(!r && str != ''){
+			items.add(new Item({
+				name:str,
+				x:x,
+				y:y
+			}));
+		}else{
+			error('invalid name or we already have something with that name');
+		}
+	}
+
+	//
+	setUpGrid();
+
+</script>
+</html>
