@@ -4,12 +4,39 @@
 	<script type="text/javascript" src="js/d3.js"></script>
 	<script type="text/javascript" src="js/underscore.js"></script>
 	<script type="text/javascript" src="js/backbone.js"></script>
+	<style type="text/css">
+		body{
+			background-color: #00F;
+			color: #FFF;
+			font-family: sans-serif;
+		}
+
+		a{
+			color: #FFF;
+		}	
+		.remove-link{
+			margin-left: 10px;
+		}
+
+		.grabable{
+			cursor: grab;
+		}
+
+		text:hover, circle:hover{
+			cursor: move;
+		}
+
+		svg{
+			background-color: #00F;
+		}
+
+	</style>
 </head>
 <body>
 <div id="add-input"><label>Add a thing</label><input type="text" name="addition" id="addition"><button id="add"> + </button></div>
 <div id="edit">
 	<label>remove a thing</label>
-	<ul></ul></div>
+	</div>
 <div id="axes-input">
 	X<input type="text" name="horizontal-min" id="horizontal-min" value="Despicable"> <-> <input type="text" name="horizontal-max" id="horizontal-max" value="Brilliant">
 	<br>
@@ -20,21 +47,59 @@
 </body>
 
 <script type="text/javascript">
+//console.clear();
+var blue = '#00F';
+var white = '#FFF';
+</script>
+
+<script type="text/javascript">
 	//backbone stuff
 	var Item = Backbone.Model.extend();
 	var items = new Backbone.Collection([], {
 		model: Item
 	});
 
-	var Axis = Backbone.Model.extend();
+	var Label = Backbone.Model.extend();
+	var labels = new Backbone.Collection([], {
+		model: Label
+	});
 </script>
 
-
 <script type="text/javascript">
+	//initial data
+	function addInitialData(){
+		["Zadie Smith","Michael Chabon","Lauren Beukes","Robert Graves","Angela Carter"]
+			.forEach(function(name){
+	
+				items.push( new Item({
+					name:name
+				}) );
+	
+			});
+	}
+
+
+</script>
+<script type="text/javascript">
+	var width = 1000, height = 500,
+		margin = {top:20, left:20, bottom:20, right:500},
+		textMargin = {top:0, left:10, bottom:8, right:5},
+		plotDimension = Math.min((width-(margin.left + margin.right)), height-(margin.top+margin.bottom)),	
+		gridFrequency = 100;
+		scale = d3.scale.linear().range([0, plotDimension]).domain([-1,1]);
+
+	var drag = d3.behavior.drag()
+	    .on('drag', dragmove);
+
+	function dragmove(d) {
+		console.log('drag')
+		d3.select(this)
+			.attr('transform', 'translate(' + d3.event.x + ',' + d3.event.y + ')');
+	}
 
 	items.on('all', function(){
-		console.log('change', items.length)
 		d3.select('#edit').call(editorList);
+		d3.select('#grid-elements').call(updateGrid);
 	});
 
 	d3.select('#add').on('click', function(){
@@ -42,21 +107,117 @@
 	});
 
 	function setUpGrid(){
-		d3.select('#grid')
+		var gridIntervals = d3.range(-1,1.1,0.1);
+		var grid = d3.select('#grid')
 			.append('svg')
-			.attr({width:600,height:600});
+			.attr( {width:width, height:height} )
+			.append('g')
+			.attr('transform','translate(' + margin.left + ',' + margin.top + ')');
+
+		d3.select('#grid svg')
+			.append('g')
+			.attr({
+				'id':'grid-elements',
+				'transform':'translate(' + margin.left + ',' + margin.top + ')'
+			});
+
+		function gridStroke(d){
+			if(d%1 == 0){
+				return white;
+			}
+			return white;
+		}
+
+		function gridStrokeOpacity(d){
+			if(d%1 == 0){
+				return 1;
+			}
+			return 0.5;
+		}
+
+		grid.selectAll('.horizontal').data(gridIntervals)
+			.enter()
+				.append('line')
+					.attr({
+						'class':'horizontal',
+						x1:0,
+						x2:plotDimension,
+						y1:scale,
+						y2:scale,
+						stroke:gridStroke,
+						'stroke-opacity':gridStrokeOpacity
+					});
+
+		grid.selectAll('.vertical').data(gridIntervals)
+			.enter()
+				.append('line')
+					.attr({
+						'class':'vertical',
+						y1:0,
+						y2:plotDimension,
+						x1:scale,
+						x2:scale,
+						stroke:gridStroke,
+						'stroke-opacity':gridStrokeOpacity
+					});
+		//axis labels
+		grid.append('g').call(axisLabels);
+	}
+
+	function axisLabels(g){
+		var join = g.selectAll('g.axis-label').data(labels.models);
+	}
+
+	function itemView(g){
+		var text = g.append('text').text(function(d){ return d.get('name'); }).attr({
+			'font-family':'sans-serif',
+			'class':'grabable',
+			'fill':white,
+			'x':textMargin.left,
+			'y':textMargin.bottom
+		});
+
+		g.append('circle').attr({
+			'fill':blue,
+			'stroke':white,
+			'r':5
+		});
+	}
+
+	function updateGrid(g){
+		console.log('update grid',g);
+		var join = g.selectAll('.grid-item')
+			.data(items.models, function(d){ return d.get('name'); });
+
+		var gridItems = join.enter().append('g').attr({ 'class':'grid-item' })
+			.call(drag)
+			.call(itemView);
+
+		join.attr('transform',function(d,i){
+			if(d.x && d.y){
+				return 'translate(' + scale(d.x) + ',' + scale(d.y) + ')'
+			}
+			//otherwise put it in the margin
+			return 'translate('+(margin.left + plotDimension)+','+(margin.top + 30 * i )+')'
+		});
+
+		join.exit().remove();
 	}
 
 	function editorList(g){
-		var join = g.select('ul').selectAll('li')
+		var join = g.selectAll('a')
 			.data(items.models, function(d){ return d.get('name'); });
 		
 		join.enter()
-			.append('li').text(function(d){
+			.append('a').text(function(d){
 				return d.get('name')
-			}).append('button').on('click',function(d){
+			})
+			.attr('class','remove-link')
+			.attr('href','#')
+			.on('click',function(d){
+				d3.event.preventDefault();
 				items.remove(d);
-			}).text(' - ');
+			});
 		join.exit().remove();
 	}
 
@@ -65,7 +226,6 @@
 	}
 
 	function addItem(str, x, y){
-		console.log('adding... ' + str);
 		var r = items.findWhere({ name: str});
 		if(!r && str != ''){
 			items.add(new Item({
@@ -79,7 +239,8 @@
 	}
 
 	//
-	setUpGrid();
 
+	setUpGrid();
+	addInitialData();
 </script>
 </html>
