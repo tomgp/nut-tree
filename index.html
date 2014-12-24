@@ -289,9 +289,6 @@ var white = '#FFF';
 				});
 
 			join.selectAll('text')
-				.attr('t',function(d,i){
-					console.log(d3.select(this).node().getBoundingClientRect());
-				})
 				.text(function(d,i){
 					if(i==1){
 						return d.get('max');
