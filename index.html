@@ -116,8 +116,6 @@ var white = '#FFF';
 			.forEach(function(o){
 				axes.push( new Axis(o) );
 			});
-
-		console.log('m',axes.models);
 	}
 
 
@@ -263,6 +261,7 @@ var white = '#FFF';
 				.attr({
 					fill:white,
 					'font-size':20,
+					'text-anchor':'middle',
 					'transform':function(d){
 						var a = d.get('axis');
 						if(a == 'x'){
@@ -278,6 +277,7 @@ var white = '#FFF';
 				.attr({
 					fill:white,
 					'font-size':20,
+					'text-anchor':'middle',
 					'transform':function(d){
 						var a = d.get('axis');
 						if(a == 'x'){
@@ -288,12 +288,17 @@ var white = '#FFF';
 					}
 				});
 
-			join.selectAll('text').text(function(d,i){
+			join.selectAll('text')
+				.attr('t',function(d,i){
+					console.log(d3.select(this).node().getBoundingClientRect());
+				})
+				.text(function(d,i){
 					if(i==1){
 						return d.get('max');
 					}
 					return d.get('min');
 				});
+
 	}
 
 	function editorList(g){
