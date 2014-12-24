@@ -5,24 +5,53 @@
 	<script type="text/javascript" src="js/underscore.js"></script>
 	<script type="text/javascript" src="js/backbone.js"></script>
 	<style type="text/css">
+		input{
+			background-color: #00F;
+			border: none;
+			border-color: transparent;
+			border-bottom: solid 3px #FFF;
+			color: #FFF;
+			margin: 10px;
+			font-size: 1.5rem;
+		}
+
+		button {
+			background-color:transparent;
+			border:2px solid #ffffff;
+			display:inline-block;
+			cursor:pointer;
+			color:#FFF;
+			font-family:sans-serif;
+			font-size:1.5rem;
+			font-weight:bold;
+		}
+		
+		button:hover {
+			background-color:transparent;
+		}
+		
+		button:active {
+			position:relative;
+			top:1px;
+		}
+
+
 		body{
 			background-color: #00F;
 			color: #FFF;
 			font-family: sans-serif;
+
 		}
 
 		a{
 			color: #FFF;
 		}	
+
 		.remove-link{
-			margin-left: 10px;
+			margin-right: 10px;
 		}
 
-		.grabable{
-			cursor: grab;
-		}
-
-		text:hover, circle:hover{
+		text.grabable:hover, circle:hover{
 			cursor: move;
 		}
 
@@ -33,17 +62,25 @@
 	</style>
 </head>
 <body>
-<div id="add-input"><label>Add a thing</label><input type="text" name="addition" id="addition"><button id="add"> + </button></div>
+<div id="add-input"><label>Add:</label><input type="text" name="addition" id="addition"><button id="add"> + </button></div>
 <div id="edit">
-	<label>remove a thing</label>
+	<label>Remove:</label>
 	</div>
+
+<div id="grid"></div>
+<div id="share"><button id="save">save</button></div>
 <div id="axes-input">
-	X<input type="text" name="horizontal-min" id="horizontal-min" value="Despicable"> <-> <input type="text" name="horizontal-max" id="horizontal-max" value="Brilliant">
+	<p>Change the axes:</p>
+	<!-- X<input type="text" name="horizontal-min" id="horizontal-min" value="Despicable"> <-> <input type="text" name="horizontal-max" id="horizontal-max" value="Brilliant">
 	<br>
-	Y<input type="text" name="vertical-min" id="vertical-min" value="Lowbrow"> <-> <input type="text" name="vertical-max" id="vertical-max" value="Highbrow">
+	Y<input type="text" name="vertical-min" id="vertical-min" value="Lowbrow"> <-> <input type="text" name="vertical-max" id="vertical-max" value="Highbrow"> -->
 </div>
-<div id="grid"><label>arrange the things</label></div>
-<div id="share">save the thing</div>
+<hr>
+<div class='about'>
+	Made by <a href="http://www.toffeemilkshake.co.uk">Tom Pearson</a>.
+	Made with <a href="http://d3js.org">D3</a> &amp; <a href="http://backbonejs.org">Backbone</a>.
+	Named for <a href="https://twitter.com/emilynussbaum">Emily Nussbaum</a> who <a href="http://blog.sethroberts.net/2008/05/25/how-things-begin-the-approval-matrix-part-1/">invented the New York Magazine's Approval Matrix</a>
+</div>
 </body>
 
 <script type="text/javascript">
@@ -59,9 +96,9 @@ var white = '#FFF';
 		model: Item
 	});
 
-	var Label = Backbone.Model.extend();
-	var labels = new Backbone.Collection([], {
-		model: Label
+	var Axis = Backbone.Model.extend();
+	var axes = new Backbone.Collection([], {
+		model: Axis
 	});
 </script>
 
@@ -70,12 +107,17 @@ var white = '#FFF';
 	function addInitialData(){
 		["Zadie Smith","Michael Chabon","Lauren Beukes","Robert Graves","Angela Carter"]
 			.forEach(function(name){
-	
 				items.push( new Item({
 					name:name
 				}) );
-	
 			});
+
+		[{axis:'x', min:'Despicable', max:'Brilliant'}, {axis:'y', min:'Lowbrow', max:'Highbrow'}]
+			.forEach(function(o){
+				axes.push( new Axis(o) );
+			});
+
+		console.log('m',axes.models);
 	}
 
 
@@ -85,21 +127,30 @@ var white = '#FFF';
 		margin = {top:20, left:20, bottom:20, right:500},
 		textMargin = {top:0, left:10, bottom:8, right:5},
 		plotDimension = Math.min((width-(margin.left + margin.right)), height-(margin.top+margin.bottom)),	
-		gridFrequency = 100;
-		scale = d3.scale.linear().range([0, plotDimension]).domain([-1,1]);
+		gridFrequency = 100,
+		scale = d3.scale.linear().range([0, plotDimension]).domain([-1,1]),
+		snappedScale = function(d){
+			return Math.round(scale(d));
+		};
 
 	var drag = d3.behavior.drag()
 	    .on('drag', dragmove);
 
 	function dragmove(d) {
-		console.log('drag')
+		console.log('drag');
 		d3.select(this)
 			.attr('transform', 'translate(' + d3.event.x + ',' + d3.event.y + ')');
+
+		//TODO change the position in the data
 	}
 
 	items.on('all', function(){
 		d3.select('#edit').call(editorList);
 		d3.select('#grid-elements').call(updateGrid);
+	});
+
+	axes.on('all', function(){
+		d3.select('#grid-elements').call(updateAxisLabels);
 	});
 
 	d3.select('#add').on('click', function(){
@@ -132,7 +183,7 @@ var white = '#FFF';
 			if(d%1 == 0){
 				return 1;
 			}
-			return 0.5;
+			return 0.2;
 		}
 
 		grid.selectAll('.horizontal').data(gridIntervals)
@@ -142,9 +193,10 @@ var white = '#FFF';
 						'class':'horizontal',
 						x1:0,
 						x2:plotDimension,
-						y1:scale,
-						y2:scale,
+						y1:snappedScale,
+						y2:snappedScale,
 						stroke:gridStroke,
+						'shape-rendering':'crispEdges',
 						'stroke-opacity':gridStrokeOpacity
 					});
 
@@ -155,17 +207,12 @@ var white = '#FFF';
 						'class':'vertical',
 						y1:0,
 						y2:plotDimension,
-						x1:scale,
-						x2:scale,
+						x1:snappedScale,
+						x2:snappedScale,
 						stroke:gridStroke,
+						'shape-rendering':'crispEdges',
 						'stroke-opacity':gridStrokeOpacity
 					});
-		//axis labels
-		grid.append('g').call(axisLabels);
-	}
-
-	function axisLabels(g){
-		var join = g.selectAll('g.axis-label').data(labels.models);
 	}
 
 	function itemView(g){
@@ -173,6 +220,7 @@ var white = '#FFF';
 			'font-family':'sans-serif',
 			'class':'grabable',
 			'fill':white,
+			'font-weight': 'lighter',
 			'x':textMargin.left,
 			'y':textMargin.bottom
 		});
@@ -185,11 +233,11 @@ var white = '#FFF';
 	}
 
 	function updateGrid(g){
-		console.log('update grid',g);
+		//console.log('update grid',g);
 		var join = g.selectAll('.grid-item')
 			.data(items.models, function(d){ return d.get('name'); });
 
-		var gridItems = join.enter().append('g').attr({ 'class':'grid-item' })
+		join.enter().append('g').attr({ 'class':'grid-item' })
 			.call(drag)
 			.call(itemView);
 
@@ -202,6 +250,50 @@ var white = '#FFF';
 		});
 
 		join.exit().remove();
+	}
+
+	function updateAxisLabels(g){
+		console.log('update axis', axes.models);
+		var join = g.selectAll('g.axis')
+			.data(axes.models);
+
+		var axesEnter = join.enter().append('g').attr({'class':'axis'});
+		//append the min labels
+			axesEnter.append('text')
+				.attr({
+					fill:white,
+					'font-size':20,
+					'transform':function(d){
+						var a = d.get('axis');
+						if(a == 'x'){
+							return 'translate(' + scale(-1) + ',' + scale(0) + ') rotate(270)';
+						}else{
+							return 'translate(' + scale(0) + ',' + scale(1) + ')'
+						}
+					}
+				});
+
+		//append the max labels
+			axesEnter.append('text')
+				.attr({
+					fill:white,
+					'font-size':20,
+					'transform':function(d){
+						var a = d.get('axis');
+						if(a == 'x'){
+							return 'translate(' + scale(1) + ',' + scale(0) + ') rotate(90)';
+						}else{
+							return 'translate(' + scale(0) + ',' + scale(-1) + ')'
+						}
+					}
+				});
+
+			join.selectAll('text').text(function(d,i){
+					if(i==1){
+						return d.get('max');
+					}
+					return d.get('min');
+				});
 	}
 
 	function editorList(g){
