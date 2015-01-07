@@ -135,11 +135,12 @@ var white = '#FFF';
 	    .on('drag', dragmove);
 
 	function dragmove(d) {
-		console.log('drag');
-		d3.select(this)
-			.attr('transform', 'translate(' + d3.event.x + ',' + d3.event.y + ')');
-
-		//TODO change the position in the data
+		// d3.select(this)
+		// 	.attr('transform', 'translate(' + d3.event.x + ',' + d3.event.y + ')');
+		
+		d.set('x', scale.invert(d3.event.x) );
+		d.set('y', scale.invert(d3.event.y) );
+		//console.log('d',d);
 	}
 
 	items.on('all', function(){
@@ -232,7 +233,7 @@ var white = '#FFF';
 	}
 
 	function updateGrid(g){
-		//console.log('update grid',g);
+		console.log('update grid',g);
 		var join = g.selectAll('.grid-item')
 			.data(items.models, function(d){ return d.get('name'); });
 
@@ -241,8 +242,14 @@ var white = '#FFF';
 			.call(itemView);
 
 		join.attr('transform',function(d,i){
-			if(d.x && d.y){
-				return 'translate(' + scale(d.x) + ',' + scale(d.y) + ')'
+			var coords = {
+				x:d.get('x'),
+				y:d.get('y')
+			};
+
+			if(coords.x && coords.y){
+
+				return 'translate(' + scale(coords.x) + ',' + scale(coords.y) + ')'
 			}
 			//otherwise put it in the margin
 			return 'translate('+(margin.left + plotDimension)+','+(margin.top + 30 * i )+')'
@@ -340,8 +347,6 @@ var white = '#FFF';
 				return d.get(end);
 			}
 		}).on('input',function(d){
-			console.log( 'change' ,d , d3.select(this).text() );
-			console.log( this.value );
 			d.set(d3.select(this).attr('data-end'), this.value);
 		});
 
