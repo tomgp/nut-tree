@@ -121,8 +121,8 @@ var white = '#FFF';
 
 </script>
 <script type="text/javascript">
-	var width = 1000, height = 500,
-		margin = {top:20, left:20, bottom:20, right:500},
+	var width = 700, height = 600,
+		margin = {top:20, left:20, bottom:25, right:150},
 		textMargin = {top:0, left:10, bottom:8, right:5},
 		plotDimension = Math.min((width-(margin.left + margin.right)), height-(margin.top+margin.bottom)),	
 		gridFrequency = 100,
@@ -149,6 +149,7 @@ var white = '#FFF';
 
 	axes.on('all', function(){
 		d3.select('#grid-elements').call(updateAxisLabels);
+		d3.select('#axes-input').call(axisInput);
 	});
 
 	d3.select('#add').on('click', function(){
@@ -255,19 +256,21 @@ var white = '#FFF';
 		var join = g.selectAll('g.axis')
 			.data(axes.models);
 
+		var labelGap = 5;
+		var labelSize = 20;
 		var axesEnter = join.enter().append('g').attr({'class':'axis'});
 		//append the min labels
 			axesEnter.append('text')
 				.attr({
 					fill:white,
-					'font-size':20,
+					'font-size':labelSize,
 					'text-anchor':'middle',
 					'transform':function(d){
 						var a = d.get('axis');
 						if(a == 'x'){
-							return 'translate(' + scale(-1) + ',' + scale(0) + ') rotate(270)';
+							return 'translate(' + (scale(-1)-labelGap) + ',' + scale(0) + ') rotate(270)';
 						}else{
-							return 'translate(' + scale(0) + ',' + scale(1) + ')'
+							return 'translate(' + scale(0) + ',' + (scale(1) + labelGap + labelSize) + ')'
 						}
 					}
 				});
@@ -276,14 +279,14 @@ var white = '#FFF';
 			axesEnter.append('text')
 				.attr({
 					fill:white,
-					'font-size':20,
+					'font-size':labelSize,
 					'text-anchor':'middle',
 					'transform':function(d){
 						var a = d.get('axis');
 						if(a == 'x'){
-							return 'translate(' + scale(1) + ',' + scale(0) + ') rotate(90)';
+							return 'translate(' + (scale(1) + labelGap) + ',' + scale(0) + ') rotate(90)';
 						}else{
-							return 'translate(' + scale(0) + ',' + scale(-1) + ')'
+							return 'translate(' + scale(0) + ',' + (scale(-1) - labelGap) + ')'
 						}
 					}
 				});
@@ -313,6 +316,33 @@ var white = '#FFF';
 				items.remove(d);
 			});
 		join.exit().remove();
+	}
+
+	function axisInput(g){
+		var join = g.selectAll('div')
+			.data(axes.models, function(d){ return d.get('axis'); });
+
+		var divs = join.enter().append('div')
+		divs.append('label').text(function(d){ return d.get('axis'); });
+		divs.append('input').attr({
+			type:'text',
+			'data-end':'min'
+		});
+		
+		divs.append('input').attr({
+			type:'text',
+			'data-end':'max'
+		});
+
+		g.selectAll('input').attr({
+			value:function(d){
+				var end = d3.select(this).attr('data-end')
+				return d.get(end);
+			}
+		});
+
+
+
 	}
 
 	function error(str){
