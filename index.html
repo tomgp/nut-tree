@@ -122,8 +122,8 @@ var white = '#FFF';
 </script>
 <script type="text/javascript">
 	var width = 700, height = 600,
-		margin = {top:20, left:20, bottom:25, right:150},
-		textMargin = {top:0, left:10, bottom:8, right:5},
+		margin = { top:20, left:20, bottom:25, right:150 },
+		textMargin = { top:0, left:10, bottom:8, right:5 },
 		plotDimension = Math.min((width-(margin.left + margin.right)), height-(margin.top+margin.bottom)),	
 		gridFrequency = 100,
 		scale = d3.scale.linear().range([0, plotDimension]).domain([-1,1]),
@@ -339,6 +339,10 @@ var white = '#FFF';
 				var end = d3.select(this).attr('data-end')
 				return d.get(end);
 			}
+		}).on('input',function(d){
+			console.log( 'change' ,d , d3.select(this).text() );
+			console.log( this.value );
+			d.set(d3.select(this).attr('data-end'), this.value);
 		});
 
 
