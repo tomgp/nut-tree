@@ -71,9 +71,6 @@
 <div id="share"><button id="save">save</button></div>
 <div id="axes-input">
 	<p>Change the axes:</p>
-	<!-- X<input type="text" name="horizontal-min" id="horizontal-min" value="Despicable"> <-> <input type="text" name="horizontal-max" id="horizontal-max" value="Brilliant">
-	<br>
-	Y<input type="text" name="vertical-min" id="vertical-min" value="Lowbrow"> <-> <input type="text" name="vertical-max" id="vertical-max" value="Highbrow"> -->
 </div>
 <hr>
 <div class='about'>
@@ -248,10 +245,10 @@ var white = '#FFF';
 			};
 
 			if(coords.x && coords.y){
-
-				return 'translate(' + scale(coords.x) + ',' + scale(coords.y) + ')'
+				//TODO check if the text is still in the margin... 
+				return 'translate(' + scale(coords.x) + ',' + scale(coords.y) + ')';
 			}
-			//otherwise put it in the margin
+			//otherwise put it in the margin TODO: make this positioning smarter... (and make it a transition rather than a snap)
 			return 'translate('+(margin.left + plotDimension)+','+(margin.top + 30 * i )+')'
 		});
 
