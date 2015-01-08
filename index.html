@@ -57,6 +57,7 @@
 
 		svg{
 			background-color: #00F;
+			margin-top: 20px;
 		}
 
 	</style>
@@ -178,9 +179,9 @@ var white = '#FFF';
 
 		function gridStrokeOpacity(d){
 			if(d%1 == 0){
-				return 1;
+				return 0.5;
 			}
-			return 0.2;
+			return 0.1;
 		}
 
 		grid.selectAll('.horizontal').data(gridIntervals)
@@ -238,6 +239,8 @@ var white = '#FFF';
 			.call(drag)
 			.call(itemView);
 
+		var marginCount = 0;
+
 		join.attr('transform',function(d,i){
 			var coords = {
 				x:d.get('x'),
@@ -245,11 +248,11 @@ var white = '#FFF';
 			};
 
 			if(coords.x && coords.y){
-				//TODO check if the text is still in the margin... 
 				return 'translate(' + scale(coords.x) + ',' + scale(coords.y) + ')';
 			}
 			//otherwise put it in the margin TODO: make this positioning smarter... (and make it a transition rather than a snap)
-			return 'translate('+(margin.left + plotDimension)+','+(margin.top + 30 * i )+')'
+			marginCount++;
+			return 'translate('+(margin.left + plotDimension)+','+(margin.top + 30 * (marginCount-1) )+')'
 		});
 
 		join.exit().remove();
