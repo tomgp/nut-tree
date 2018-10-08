@@ -1,9 +1,10 @@
-e<html>
+<html>
 <head>
 	<title></title>
 	<script type="text/javascript" src="js/d3.js"></script>
 	<script type="text/javascript" src="js/underscore.js"></script>
 	<script type="text/javascript" src="js/backbone.js"></script>
+	<script type="text/javascript" src="js/saveSvgAsPng.js"></script>
 	<style type="text/css">
 		input{
 			background-color: #00F;
@@ -12,17 +13,16 @@ e<html>
 			border-bottom: solid 3px #FFF;
 			color: #FFF;
 			margin: 10px;
-			font-size: 1.5rem;
 		}
 
 		button {
 			background-color:transparent;
 			border:2px solid #ffffff;
+			font-size: 1.5rem;
 			display:inline-block;
 			cursor:pointer;
 			color:#FFF;
 			font-family:sans-serif;
-			font-size:1.5rem;
 			font-weight:bold;
 		}
 		
@@ -57,6 +57,7 @@ e<html>
 
 		svg{
 			background-color: #00F;
+			font-family: sans-serif;
 			margin-top: 20px;
 		}
 
@@ -76,8 +77,8 @@ e<html>
 <hr>
 <div class='about'>
 	Made by <a href="http://www.toffeemilkshake.co.uk">Tom Pearson</a>.
-	Made with <a href="http://d3js.org">D3</a> &amp; <a href="http://backbonejs.org">Backbone</a>.
-	Named for <a href="https://twitter.com/emilynussbaum">Emily Nussbaum</a> who <a href="http://blog.sethroberts.net/2008/05/25/how-things-begin-the-approval-matrix-part-1/">invented the New York Magazine's Approval Matrix</a>
+	Made with <a href="http://d3js.org">D3</a> &amp; <a href="http://backbonejs.org">Backbone</a> and <a href="https://github.com/exupero/saveSvgAsPng">saveSvgAsPng</a>.
+	Default axis labels from <a href="http://blog.sethroberts.net/2008/05/25/how-things-begin-the-approval-matrix-part-1/">New York Magazine's Approval Matrix</a>
 </div>
 </body>
 
@@ -115,8 +116,6 @@ var white = '#FFF';
 				axes.push( new Axis(o) );
 			});
 	}
-
-
 </script>
 <script type="text/javascript">
 	var width = 700, height = 600,
@@ -155,11 +154,28 @@ var white = '#FFF';
 		addItem( d3.select('#addition').node().value );
 	});
 
+	d3.select('#save')
+			.on('click', function(){
+				saveSvgAsPng(document.getElementById('2x2'), '2x2.png');
+			});
+	
 	function setUpGrid(){
+	
 		var gridIntervals = d3.range(-1,1.1,0.1);
-		var grid = d3.select('#grid')
+		d3.select('#grid')
 			.append('svg')
+			.attr('id','2x2')
 			.attr( {width:width, height:height} )
+			
+		d3.select('#grid svg')
+			.append('rect')
+			.attr('width', width)
+			.attr('height', height)
+			.attr('x', 0)
+			.attr('y', 0)
+			.attr('fill','#00F')
+
+		var grid = d3.select('#grid svg')
 			.append('g')
 			.attr('transform','translate(' + margin.left + ',' + margin.top + ')');
 
